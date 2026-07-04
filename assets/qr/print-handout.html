@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>장학금 정기후원 QR 안내</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;700&family=Noto+Sans+KR:wght@400;700;800&display=swap");
+
+      * {
+        box-sizing: border-box;
+      }
+
+      @page {
+        size: A5 portrait;
+        margin: 12mm;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Noto Sans KR", sans-serif;
+        color: #0a0a0a;
+        background: #f2f2ef;
+      }
+
+      .sheet {
+        width: 148mm;
+        min-height: 210mm;
+        margin: 0 auto;
+        padding: 10mm;
+        background: #fff;
+        border: 1px solid #0a0a0a;
+      }
+
+      .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #0a0a0a;
+        padding-bottom: 4mm;
+        margin-bottom: 6mm;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 8pt;
+        letter-spacing: 0.12em;
+      }
+
+      h1 {
+        margin: 0 0 3mm;
+        font-size: 16pt;
+        font-weight: 800;
+        line-height: 1.35;
+      }
+
+      .sub {
+        margin: 0 0 6mm;
+        font-size: 9pt;
+        color: #555;
+        line-height: 1.6;
+      }
+
+      .qr-wrap {
+        text-align: center;
+        border: 1px solid #0a0a0a;
+        padding: 6mm;
+        margin-bottom: 5mm;
+      }
+
+      .qr-wrap img {
+        width: 42mm;
+        height: 42mm;
+        image-rendering: pixelated;
+      }
+
+      .url {
+        margin-top: 3mm;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 7.5pt;
+        word-break: break-all;
+      }
+
+      .steps {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font-size: 8.5pt;
+        line-height: 1.7;
+      }
+
+      .steps li {
+        display: grid;
+        grid-template-columns: 8mm 1fr;
+        gap: 2mm;
+        margin-bottom: 2mm;
+      }
+
+      .steps span {
+        font-family: "IBM Plex Mono", monospace;
+        font-weight: 700;
+        color: #c8a45c;
+      }
+
+      .note {
+        margin-top: 5mm;
+        padding-top: 4mm;
+        border-top: 1px solid #ddd;
+        font-size: 7.5pt;
+        color: #666;
+        line-height: 1.6;
+      }
+
+      @media print {
+        body {
+          background: #fff;
+        }
+
+        .sheet {
+          border: none;
+          margin: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sheet">
+      <div class="top">
+        <span>DAEIL-SCH™</span>
+        <span>SCHOLARSHIP PROGRAM</span>
+      </div>
+
+      <h1>장학금 정기후원<br />참여 신청</h1>
+      <p class="sub">
+        아래 QR을 스캔하시면 신청 페이지로 이동합니다.<br />
+        이름·연락처·기수·희망 월 후원액을 입력해 주세요.
+      </p>
+
+      <div class="qr-wrap">
+        <img src="donation-apply-qr-print.png" alt="후원 신청 QR 코드" />
+        <div class="url">https://half-dune-2720.gencow.app</div>
+      </div>
+
+      <ol class="steps">
+        <li><span>01</span> QR 스캔 또는 링크 접속</li>
+        <li><span>02</span> 신청서 작성 후 제출</li>
+        <li><span>03</span> 동문회에서 개별 안내 연락</li>
+      </ol>
+
+      <p class="note">
+        ※ 이 페이지에서 즉시 결제·자동이체는 진행되지 않습니다.<br />
+        대일외국어고등학교 총동문회 · 장학금 사업
+      </p>
+    </div>
+  </body>
+</html>

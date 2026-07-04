@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.gencow/
+gencow/
+gencow.json
+gencow.config.js
+drizzle.config.ts
+scripts/deploy.sh
+prompt.md
+.claude/
+src/gencow/
+*.log
+.env
+.DS_Store
