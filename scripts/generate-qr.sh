@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="$ROOT/assets/qr"
-URL="${DONATION_URL:-https://half-dune-2720.gencow.app}"
+URL="${DONATION_URL:-https://fund.dflhs.or.kr}"
 
 mkdir -p "$OUT"
 
