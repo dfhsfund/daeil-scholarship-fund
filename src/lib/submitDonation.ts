@@ -150,6 +150,48 @@ function csvCell(value: string | number) {
   return text;
 }
 
+// 효성CMS+ 대량등록 CSV는 EUC-KR(CP949)만 인식한다(UTF-8로 올리면 "등록할 데이터가 없습니다"로 실패).
+// 브라우저는 EUC-KR 인코딩(문자열 -> 바이트)을 기본 제공하지 않으므로,
+// 디코딩은 되는 TextDecoder를 모든 2바이트 조합에 돌려 역방향 매핑 테이블을 만들어 쓴다.
+let eucKrEncodeTable: Map<string, Uint8Array> | null = null;
+
+function getEucKrEncodeTable() {
+  if (eucKrEncodeTable) return eucKrEncodeTable;
+
+  const decoder = new TextDecoder("euc-kr");
+  const table = new Map<string, Uint8Array>();
+  for (let b = 0; b <= 0x7f; b++) {
+    table.set(String.fromCharCode(b), new Uint8Array([b]));
+  }
+  for (let lead = 0x81; lead <= 0xfe; lead++) {
+    for (let trail = 0x41; trail <= 0xfe; trail++) {
+      if (trail === 0x7f) continue;
+      const bytes = new Uint8Array([lead, trail]);
+      const decoded = decoder.decode(bytes);
+      if (decoded.length === 1 && decoded.charCodeAt(0) !== 0xfffd && !table.has(decoded)) {
+        table.set(decoded, bytes);
+      }
+    }
+  }
+
+  eucKrEncodeTable = table;
+  return table;
+}
+
+function encodeEucKr(text: string) {
+  const table = getEucKrEncodeTable();
+  const bytes: number[] = [];
+  for (const ch of text) {
+    const mapped = table.get(ch);
+    if (mapped) {
+      bytes.push(...mapped);
+    } else {
+      bytes.push(0x3f); // '?' — EUC-KR로 표현 불가한 문자(사실상 발생 안 함)
+    }
+  }
+  return Uint8Array.from(bytes);
+}
+
 // 사이트 표기용 은행명 -> 효성CMS+ 대량등록에서 요구하는 공식 은행명.
 // (SBI저축은행 등 효성CMS+ 미지원 은행은 신청 단계에서 이미 제외됨)
 const CMS_BANK_NAME: Record<string, string> = {
@@ -210,7 +252,8 @@ export const CMS_PRODUCT_NAME = "발전기금정기후원";
  * 효성CMS+ "대량회원등록" 템플릿(A~CC, 81개 컬럼)에 맞춘 CSV 생성.
  * 우리 서비스는 개인 / CMS 계좌이체 / 정기 / 무기한 / 간편동의(휴대전화) 케이스만 다루므로
  * 카드·실시간CMS·휴대전화결제·가상계좌·세금계산서 관련 컬럼은 모두 공란으로 둔다.
- * 계좌번호가 지수 표기로 깨지지 않도록 ="..." 형태로 텍스트를 강제한다.
+ * 공식 샘플 파일(대량회원등록샘플.csv)과 바이트 단위로 대조해 인코딩(EUC-KR)·개행(LF)·
+ * 값 포맷(="..." 없이 평문)을 맞췄다. EUC-KR 바이트 배열을 그대로 반환한다.
  */
 export function buildCmsUploadCsv(donations: Donation[]) {
   const headers = [
@@ -236,9 +279,8 @@ export function buildCmsUploadCsv(donations: Donation[]) {
 
   const lines = donations.map((row) => {
     const holderName = row.holderName || row.name;
-    const account = row.account ? `="${row.account}"` : "";
-    const withdrawDayRaw = cmsWithdrawDay(row.withdrawDay);
-    const withdrawDay = withdrawDayRaw ? `="${withdrawDayRaw}"` : "";
+    const account = row.account || "";
+    const withdrawDay = cmsWithdrawDay(row.withdrawDay);
     const joinDate = createdAtToYYYYMMDD(row.createdAt);
     const billStart = todayYYYYMMDD();
 
@@ -266,5 +308,6 @@ export function buildCmsUploadCsv(donations: Donation[]) {
     return cols.map(csvCell).join(",");
   });
 
-  return "﻿" + [headers.join(","), ...lines].join("\r\n");
+  const text = [headers.join(","), ...lines].join("\n") + "\n";
+  return encodeEucKr(text);
 }

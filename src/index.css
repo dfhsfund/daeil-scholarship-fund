@@ -696,6 +696,18 @@ input {
   color: var(--ink-900);
 }
 
+.orbit-success-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+}
+
+.orbit-success-actions .orbit-cta {
+  text-decoration: none;
+}
+
 /* Admin */
 .orbit-admin-main {
   max-width: 560px;

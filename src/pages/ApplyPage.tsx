@@ -157,6 +157,23 @@ export default function ApplyPage() {
     }
   }
 
+  function handleReset() {
+    setSubmitted(false);
+    setName("");
+    setPhone("");
+    setGrade("");
+    setHolderName("");
+    setBirth("");
+    setBank("");
+    setAccount("");
+    setWithdrawDay("25");
+    setConsent(false);
+    setSelectedAmount(50000);
+    setCustomAmount("");
+    setError("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   if (submitted) {
     return (
       <div className="apply-page">
@@ -197,6 +214,14 @@ export default function ApplyPage() {
             등록 내용 확인을 위해 동문회에서 연락드릴 수 있습니다. 첫 출금은 등록 완료 후 가장
             가까운 약정일부터 시작됩니다.
           </p>
+          <div className="orbit-success-actions">
+            <button type="button" className="orbit-cta" onClick={handleReset}>
+              처음으로
+            </button>
+            <a className="orbit-cta orbit-cta--ghost" href="https://www.dflhs.or.kr/">
+              총동문회 홈페이지
+            </a>
+          </div>
         </div>
       </div>
     );

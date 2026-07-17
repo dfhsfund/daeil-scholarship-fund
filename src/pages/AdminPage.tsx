@@ -34,8 +34,8 @@ function computeStats(donations: Donation[]) {
   return { totalCount: donations.length, totalMonthlyAmount, byAmount };
 }
 
-function downloadCsv(filename: string, csv: string) {
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+function downloadCsv(filename: string, bytes: Uint8Array) {
+  const blob = new Blob([bytes.slice() as BlobPart], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
