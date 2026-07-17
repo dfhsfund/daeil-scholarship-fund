@@ -307,7 +307,7 @@ export function buildCmsUploadCsv(donations: Donation[]) {
     const billStart = todayYYYYMMDD();
 
     const cols: (string | number)[] = [
-      String(row.id), row.name, "Y", "", row.phone, "개인", "", "미지정",
+      String(row.id), row.name, "Y", "", row.phone, "개인", "", "정기후원회원",
       "", joinDate, "Y", "", "", "",
       `${CMS_PRODUCT_NAME},1,${row.amount},사용`, CMS_PRODUCT_NAME,
       "휴대전화", "자동", "자동", "자동결제", "자동", withdrawDay,
