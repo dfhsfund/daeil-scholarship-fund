@@ -1,62 +1,129 @@
 /**
- * 대일외고 장학금 정기후원 — Google 시트 + Slack 연동
+ * 대일외고 총동문회 발전기금 정기후원 — Google 시트 연동
+ *
+ * 슬랙 알림은 이 스크립트를 거치지 않는다. 사이트(프론트)가 VITE_SLACK_WEBHOOK_URL로 직접 보낸다
+ * (src/lib/submitDonation.ts의 notifySlackDirect 참고).
  *
  * 설정:
- * 1. 스프레드시트 첫 행: ID | 이름 | 연락처 | 기수 | 신청금액 | 신청일시
+ * 1. 스프레드시트 첫 행(헤더):
+ *    ID | 이름 | 연락처 | 기수 | 예금주명 | 생년월일 | 은행 | 계좌번호 | 출금일 | 신청금액 | 동의 | 신청일시
  * 2. 이 코드를 Apps Script에 붙여넣기
  * 3. 프로젝트 설정 → 스크립트 속성:
- *    SLACK_WEBHOOK_URL = (슬랙 Incoming Webhook URL)
+ *    ADMIN_TOKEN = (관리자 조회용 비밀번호 — 설정 시 /admin 에서 동일 값 입력 필요)
  * 4. 배포 → 새 배포 → 웹 앱
  *    - 실행: 나 / 액세스: 모든 사용자
  * 5. 배포 URL을 프론트 .env 의 VITE_APPS_SCRIPT_URL 에 넣기
+ *
+ * ※ 계좌번호·생년월일 등 금융 개인정보가 저장됩니다. ADMIN_TOKEN 을 반드시 설정하고,
+ *    스프레드시트 공유 범위를 담당자로 제한하세요.
  */
 
+var COL_COUNT = 12;
+
 function doGet() {
-  return ContentService.createTextOutput(
-    JSON.stringify({ ok: true, message: "대일외고 장학금 시트 연동 웹앱이 동작 중입니다." }),
-  ).setMimeType(ContentService.MimeType.JSON);
+  return jsonResponse({ ok: true, message: "대일외고 총동문회 발전기금 시트 연동 웹앱이 동작 중입니다." });
+}
+
+function tokenOk_(data) {
+  var need = PropertiesService.getScriptProperties().getProperty("ADMIN_TOKEN");
+  if (!need) return true;
+  return String(data.token || "") === need;
+}
+
+function listRows_(sheet) {
+  var lastRow = sheet.getLastRow();
+  var rows = [];
+
+  if (lastRow > 1) {
+    var values = sheet.getRange(2, 1, lastRow - 1, COL_COUNT).getValues();
+    values.forEach(function (r, i) {
+      var name = String(r[1] || "").trim();
+      if (!name) return;
+      rows.push({
+        id: r[0] || i + 2,
+        name: name,
+        phone: String(r[2] || ""),
+        grade: String(r[3] || ""),
+        holderName: String(r[4] || ""),
+        birth: String(r[5] || ""),
+        bank: String(r[6] || ""),
+        account: String(r[7] || ""),
+        withdrawDay: String(r[8] || ""),
+        amount: Number(r[9]) || 0,
+        consent: r[10] === true || String(r[10] || "").indexOf("동의") !== -1,
+        createdAt: r[11] instanceof Date ? formatKst(r[11]) : String(r[11] || ""),
+      });
+    });
+  }
+
+  return rows;
 }
 
 function doPost(e) {
   try {
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
-    const data = JSON.parse(e.postData.contents);
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+    var data = JSON.parse(e.postData.contents);
+
+    if (data.action === "list") {
+      if (!tokenOk_(data)) return jsonResponse({ ok: false, error: "관리자 인증이 필요합니다." });
+      return jsonResponse({ ok: true, data: listRows_(sheet) });
+    }
 
     if (data.action === "clear") {
-      const lastRow = sheet.getLastRow();
+      if (!tokenOk_(data)) return jsonResponse({ ok: false, error: "관리자 인증이 필요합니다." });
+      var lastRow = sheet.getLastRow();
       if (lastRow > 1) {
         sheet.deleteRows(2, lastRow - 1);
       }
       return jsonResponse({ ok: true, cleared: true });
     }
 
-    const name = String(data.name || "").trim();
-    const phone = String(data.phone || "").replace(/\D/g, "");
-    const grade = String(data.grade || "").trim();
-    const amount = Number(data.amount);
+    var name = String(data.name || "").trim();
+    var phone = String(data.phone || "").replace(/\D/g, "");
+    var grade = String(data.grade || "").trim();
+    var holderName = String(data.holderName || "").trim() || name;
+    var birth = String(data.birth || "").replace(/\D/g, "");
+    var bank = String(data.bank || "").trim();
+    var account = String(data.account || "").replace(/\D/g, "");
+    var withdrawDay = String(data.withdrawDay || "").trim();
+    var amount = Number(data.amount);
+    var consent = data.consent === true;
 
     if (!name) return jsonResponse({ ok: false, error: "이름이 필요합니다." });
     if (!/^01[0-9]{8,9}$/.test(phone)) {
       return jsonResponse({ ok: false, error: "올바른 연락처가 필요합니다." });
     }
     if (!grade) return jsonResponse({ ok: false, error: "기수가 필요합니다." });
+    if (!/^\d{6}$/.test(birth)) {
+      return jsonResponse({ ok: false, error: "생년월일 6자리가 필요합니다." });
+    }
+    if (!bank) return jsonResponse({ ok: false, error: "은행이 필요합니다." });
+    if (account.length < 8) {
+      return jsonResponse({ ok: false, error: "올바른 계좌번호가 필요합니다." });
+    }
+    if (!withdrawDay) return jsonResponse({ ok: false, error: "출금일이 필요합니다." });
     if (!amount || amount < 1000) {
       return jsonResponse({ ok: false, error: "금액이 올바르지 않습니다." });
     }
+    if (!consent) return jsonResponse({ ok: false, error: "자동이체 출금 동의가 필요합니다." });
 
-    const createdAt = formatKstNow();
-    const id = sheet.getLastRow();
+    var createdAt = formatKstNow();
+    var id = sheet.getLastRow();
 
-    sheet.appendRow([id, name, formatPhone(phone), grade, amount, createdAt]);
-
-    notifySlack_({
-      id: id,
-      name: name,
-      phone: phone,
-      grade: grade,
-      amount: amount,
-      createdAt: createdAt,
-    });
+    sheet.appendRow([
+      id,
+      name,
+      formatPhone(phone),
+      grade,
+      holderName,
+      "'" + birth,
+      bank,
+      "'" + account,
+      withdrawDay,
+      amount,
+      consent ? "동의" : "",
+      createdAt,
+    ]);
 
     return jsonResponse({ ok: true, id: id });
   } catch (err) {
@@ -80,53 +147,11 @@ function formatPhone(phone) {
   return phone;
 }
 
+function formatKst(date) {
+  return Utilities.formatDate(date, "Asia/Seoul", "yyyy. MM. dd. HH:mm:ss");
+}
+
 function formatKstNow() {
-  return Utilities.formatDate(new Date(), "Asia/Seoul", "yyyy. MM. dd. HH:mm:ss");
+  return formatKst(new Date());
 }
 
-function formatAmount(amount) {
-  return Number(amount).toLocaleString("ko-KR") + "원";
-}
-
-function notifySlack_(row) {
-  const webhookUrl = PropertiesService.getScriptProperties().getProperty("SLACK_WEBHOOK_URL");
-  if (!webhookUrl) return;
-
-  const phone = formatPhone(row.phone);
-  const amount = formatAmount(row.amount);
-
-  const payload = {
-    text: "[장학금 정기후원] " + row.name + " · 월 " + amount + " · " + phone,
-    blocks: [
-      {
-        type: "header",
-        text: { type: "plain_text", text: "🎓 새 정기후원 신청", emoji: true },
-      },
-      {
-        type: "section",
-        fields: [
-          { type: "mrkdwn", text: "*이름*\n" + row.name },
-          { type: "mrkdwn", text: "*연락처*\n" + phone },
-          { type: "mrkdwn", text: "*기수*\n" + row.grade },
-          { type: "mrkdwn", text: "*희망 금액*\n월 " + amount },
-        ],
-      },
-      {
-        type: "context",
-        elements: [
-          {
-            type: "mrkdwn",
-            text: "신청 #" + row.id + " · " + row.createdAt,
-          },
-        ],
-      },
-    ],
-  };
-
-  UrlFetchApp.fetch(webhookUrl, {
-    method: "post",
-    contentType: "application/json",
-    payload: JSON.stringify(payload),
-    muteHttpExceptions: true,
-  });
-}

@@ -2,6 +2,7 @@
 
 interface ImportMetaEnv {
   readonly VITE_APPS_SCRIPT_URL: string;
+  readonly VITE_SLACK_WEBHOOK_URL?: string;
   readonly VITE_SHEET_URL: string;
   readonly VITE_SITE_URL: string;
 }

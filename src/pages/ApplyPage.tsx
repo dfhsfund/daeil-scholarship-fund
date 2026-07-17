@@ -8,17 +8,37 @@ const PRESET_AMOUNTS = [
 ] as const;
 
 const STEPS = [
-  { num: "01", title: "참여 의사 전달", desc: "간단한 정보를 남겨 주세요" },
-  { num: "02", title: "개별 안내 연락", desc: "동문회에서 연락드립니다" },
-  { num: "03", title: "자동이체 등록", desc: "안내에 따라 별도 진행" },
+  { num: "01", title: "정보 입력 & 출금 동의", desc: "계좌와 출금일을 남겨 주세요" },
+  { num: "02", title: "동문회 확인", desc: "등록 내용을 확인합니다" },
+  { num: "03", title: "매월 자동이체", desc: "약정일에 후원금이 이체됩니다" },
 ] as const;
 
-const META = [
-  { key: "ORG", value: "대일외고 총동문회" },
-  { key: "TYPE", value: "장학금 정기후원" },
-  { key: "YEAR", value: "2025" },
-  { key: "STATUS", value: "접수 중" },
+const BANKS = [
+  "KB국민",
+  "신한",
+  "우리",
+  "하나",
+  "NH농협",
+  "IBK기업",
+  "SC제일",
+  "한국씨티",
+  "카카오뱅크",
+  "케이뱅크",
+  "토스뱅크",
+  "새마을금고",
+  "신협",
+  "우체국",
+  "수협",
+  "부산",
+  "대구(iM)",
+  "경남",
+  "광주",
+  "전북",
+  "제주",
+  "산업(KDB)",
 ] as const;
+
+const WITHDRAW_DAYS = ["5", "10", "15", "20", "25", "말일"] as const;
 
 function formatPhone(value: string) {
   const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -31,11 +51,35 @@ function formatAmount(amount: number) {
   return `${amount.toLocaleString("ko-KR")}원`;
 }
 
+function OrbitLogoMark() {
+  return <span className="orbit-logo-mark" aria-hidden />;
+}
+
+function OrbitIllustration() {
+  return (
+    <svg className="orbit-hero-orbits" viewBox="0 0 480 480" fill="none" aria-hidden>
+      <circle cx="230" cy="150" r="110" stroke="currentColor" strokeWidth="1.5" opacity="0.5" />
+      <circle cx="330" cy="230" r="150" stroke="currentColor" strokeWidth="1.5" opacity="0.5" />
+      <circle cx="150" cy="290" r="70" stroke="currentColor" strokeWidth="1.5" opacity="0.5" />
+      <circle cx="230" cy="150" r="5" fill="currentColor" opacity="0.6" />
+      <circle cx="380" cy="140" r="5" fill="currentColor" opacity="0.6" />
+      <circle cx="410" cy="330" r="5" fill="currentColor" opacity="0.6" />
+      <circle cx="120" cy="230" r="5" fill="currentColor" opacity="0.6" />
+    </svg>
+  );
+}
+
 export default function ApplyPage() {
   const formRef = useRef<HTMLElement>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [grade, setGrade] = useState("");
+  const [holderName, setHolderName] = useState("");
+  const [birth, setBirth] = useState("");
+  const [bank, setBank] = useState("");
+  const [account, setAccount] = useState("");
+  const [withdrawDay, setWithdrawDay] = useState("25");
+  const [consent, setConsent] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState<number | "custom">(50000);
   const [customAmount, setCustomAmount] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -65,8 +109,28 @@ export default function ApplyPage() {
       setError("기수를 입력해 주세요.");
       return;
     }
+    if (!birth.match(/^\d{6}$/)) {
+      setError("생년월일 6자리(예: 900101)를 입력해 주세요.");
+      return;
+    }
+    if (!bank) {
+      setError("출금 은행을 선택해 주세요.");
+      return;
+    }
+    if (account.replace(/\D/g, "").length < 8) {
+      setError("올바른 계좌번호를 입력해 주세요.");
+      return;
+    }
+    if (!withdrawDay) {
+      setError("출금일을 선택해 주세요.");
+      return;
+    }
     if (!resolvedAmount || resolvedAmount < 1000) {
-      setError("희망 후원 금액을 1,000원 이상 입력해 주세요.");
+      setError("후원 금액을 1,000원 이상 입력해 주세요.");
+      return;
+    }
+    if (!consent) {
+      setError("자동이체 출금 동의가 필요합니다.");
       return;
     }
 
@@ -76,7 +140,13 @@ export default function ApplyPage() {
         name: name.trim(),
         phone: phone.replace(/\D/g, ""),
         grade: grade.trim(),
+        holderName: holderName.trim() || name.trim(),
+        birth: birth.trim(),
+        bank,
+        account: account.replace(/\D/g, ""),
+        withdrawDay,
         amount: resolvedAmount,
+        consent,
       });
       setSubmitted(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -90,36 +160,42 @@ export default function ApplyPage() {
   if (submitted) {
     return (
       <div className="apply-page">
-        <header className="ph-topbar">
-          <span className="ph-brand">DAEIL-SCH™</span>
-          <span className="ph-topbar-code">CONFIRMED</span>
+        <header className="orbit-topbar">
+          <span className="orbit-logo">
+            <OrbitLogoMark />
+            DAEIL·SCH
+          </span>
+          <span className="orbit-topbar-tag">접수 완료</span>
         </header>
-        <div className="ph-success">
-          <p className="ph-index">N.04 — COMPLETE</p>
-          <div className="ph-success-mark" aria-hidden>
+        <div className="orbit-success">
+          <div className="orbit-success-mark" aria-hidden>
             ✓
           </div>
           <h1>
-            참여 신청이
+            자동이체 신청이
             <br />
             접수되었습니다
           </h1>
-          <p className="ph-success-lead">
+          <p className="orbit-success-lead">
             <strong>{name}</strong> 선배님, 소중한 마음에 감사드립니다.
           </p>
-          <div className="ph-spec-sheet">
-            <div className="ph-spec-row">
-              <span className="ph-spec-key">AMOUNT</span>
-              <span className="ph-spec-val">월 {formatAmount(resolvedAmount)}</span>
+          <div className="orbit-summary-card">
+            <div className="orbit-summary-row">
+              <span>월 후원액</span>
+              <span>월 {formatAmount(resolvedAmount)}</span>
             </div>
-            <div className="ph-spec-row">
-              <span className="ph-spec-key">NEXT</span>
-              <span className="ph-spec-val">동문회에서 안내 연락을 드립니다</span>
+            <div className="orbit-summary-row">
+              <span>출금일</span>
+              <span>매월 {withdrawDay === "말일" ? "말일" : `${withdrawDay}일`}</span>
+            </div>
+            <div className="orbit-summary-row">
+              <span>다음 단계</span>
+              <span>동문회 확인 후 자동이체 등록</span>
             </div>
           </div>
-          <p className="ph-footnote">
-            이 페이지에서 결제나 자동이체가 진행되지 않습니다. 등록 절차는 별도 안내에 따라
-            진행됩니다.
+          <p className="orbit-footnote">
+            등록 내용 확인을 위해 동문회에서 연락드릴 수 있습니다. 첫 출금은 등록 완료 후 가장
+            가까운 약정일부터 시작됩니다.
           </p>
         </div>
       </div>
@@ -128,78 +204,58 @@ export default function ApplyPage() {
 
   return (
     <div className="apply-page">
-      <header className="ph-topbar">
-        <span className="ph-brand">DAEIL-SCH™</span>
-        <span className="ph-topbar-code">SCHOLARSHIP PROGRAM</span>
+      <header className="orbit-topbar">
+        <span className="orbit-logo">
+          <OrbitLogoMark />
+          DAEIL·SCH
+        </span>
+        <span className="orbit-topbar-tag">발전기금 정기후원</span>
       </header>
 
-      <section className="ph-hero">
-        <div className="ph-hero-frame" aria-hidden />
-        <div className="ph-hero-layout">
-          <aside className="ph-hero-meta">
-            {META.map((item) => (
-              <div key={item.key} className="ph-meta-row">
-                <span className="ph-meta-key">{item.key}</span>
-                <span className="ph-meta-sep">|</span>
-                <span className="ph-meta-val">{item.value}</span>
-              </div>
-            ))}
-          </aside>
-
-          <div className="ph-hero-main">
-            <p className="ph-index">N.01 — KEY VISUAL</p>
-            <div className="ph-title-grid">
-              <span className="ph-module">후배들의</span>
-              <span className="ph-module">내일을</span>
-              <span className="ph-module ph-module--invert">함께</span>
-              <span className="ph-module ph-module--wide">응원합니다</span>
-            </div>
-            <p className="ph-hero-desc">
-              장학금 정기후원은 재학생과 후배들에게 꾸준한 학업 지원을 전하는
-              동문회의 나눔 프로그램입니다. 부담 없이 참여 의사만 먼저 전해 주세요.
-            </p>
-            <button type="button" className="ph-cta" onClick={scrollToForm}>
-              <span className="ph-cta-label">APPLY</span>
-              <span className="ph-cta-text">참여 신청하기</span>
-              <span className="ph-cta-arrow">→</span>
-            </button>
-            <p className="ph-disclaimer">※ 이 페이지에서 즉시 결제되지 않습니다</p>
-          </div>
+      <section className="orbit-hero">
+        <OrbitIllustration />
+        <div className="orbit-hero-inner">
+          <span className="orbit-badge">대일외국어고등학교 총동문회</span>
+          <h1 className="orbit-hero-title">
+            후배들의 내일을
+            <br />
+            <span className="orbit-highlight">함께</span> 응원합니다
+          </h1>
+          <p className="orbit-hero-desc">
+            발전기금 정기후원은 재학생과 후배들에게 꾸준한 학업 지원을 전하는
+            동문회의 나눔 프로그램입니다. 아래에서 자동이체 신청을 바로 진행하실 수 있습니다.
+          </p>
+          <button type="button" className="orbit-cta" onClick={scrollToForm}>
+            정기후원 신청하기
+          </button>
+          <p className="orbit-hero-note">※ 신청 즉시 결제되지 않으며, 약정일에 이체됩니다</p>
         </div>
       </section>
 
-      <section className="ph-section">
-        <div className="ph-section-head">
-          <p className="ph-index">N.02 — PROGRAM</p>
-          <h2 className="ph-section-title">
-            | 정기후원 <span>프로그램</span> |
-          </h2>
+      <section className="orbit-section">
+        <div className="orbit-section-head">
+          <span className="orbit-eyebrow">정기후원 프로그램</span>
+          <h2>왜, 그리고 어떻게</h2>
         </div>
 
-        <div className="ph-panel-grid">
-          <article className="ph-panel">
-            <header className="ph-panel-head">
-              <span className="ph-panel-num">A</span>
-              <h3>왜 정기후원인가요</h3>
-            </header>
+        <div className="orbit-panel-grid">
+          <article className="orbit-panel orbit-panel--mint">
+            <h3>왜 정기후원인가요</h3>
             <p>
               한 번의 큰 기부보다, 매달 이어지는 작은 나눔이 후배들에게 더 오래 머무는
-              힘이 됩니다. 동문회는 모인 성금을 장학 사업에 투명하게 사용합니다.
+              힘이 됩니다. 동문회는 모인 성금을 발전기금 사업에 투명하게 사용합니다.
             </p>
           </article>
 
-          <article className="ph-panel ph-panel--dark">
-            <header className="ph-panel-head">
-              <span className="ph-panel-num">B</span>
-              <h3>참여 진행 절차</h3>
-            </header>
-            <ol className="ph-steps">
+          <article className="orbit-panel orbit-panel--dark">
+            <h3>참여 진행 절차</h3>
+            <ol className="orbit-steps">
               {STEPS.map((step) => (
                 <li key={step.num}>
-                  <span className="ph-step-num">{step.num}</span>
+                  <span className="orbit-step-dot">{step.num}</span>
                   <div>
                     <strong>{step.title}</strong>
-                    <span>{step.desc}</span>
+                    <span className="orbit-step-desc">{step.desc}</span>
                   </div>
                 </li>
               ))}
@@ -208,32 +264,20 @@ export default function ApplyPage() {
         </div>
       </section>
 
-      <section className="ph-section ph-section--form" ref={formRef} id="apply-form">
-        <div className="ph-section-head">
-          <p className="ph-index">N.03 — APPLICATION</p>
-          <h2 className="ph-section-title">
-            | 참여 <span>신청서</span> |
-          </h2>
-          <p className="ph-section-desc">아래 정보를 남겨 주시면, 담당자가 순차적으로 연락드립니다.</p>
+      <section className="orbit-section orbit-section--form" ref={formRef} id="apply-form">
+        <div className="orbit-section-head">
+          <span className="orbit-eyebrow">신청서 작성</span>
+          <h2>정기후원 신청서</h2>
+          <p>아래 정보를 입력하시면 동문회 확인 후 자동이체가 등록됩니다.</p>
         </div>
 
-        <div className="ph-form-sheet">
-          <div className="ph-form-sheet-bar">
-            <span>FORM — STEP 01</span>
-            <span>REV. 2025</span>
-          </div>
-
-          <form className="ph-form" onSubmit={handleSubmit}>
-            <fieldset className="ph-fieldset">
-              <legend>
-                <span className="ph-legend-num">01</span>
-                기본 정보
-              </legend>
-              <div className="ph-fields">
-                <div className="field ph-field">
-                  <label htmlFor="name">
-                    <span className="ph-field-code">NM</span> 성함
-                  </label>
+        <div className="orbit-form-card">
+          <form className="orbit-form" onSubmit={handleSubmit}>
+            <fieldset className="orbit-fieldset">
+              <legend>기본 정보</legend>
+              <div className="orbit-fields">
+                <div className="field orbit-field">
+                  <label htmlFor="name">성함</label>
                   <input
                     id="name"
                     type="text"
@@ -243,10 +287,8 @@ export default function ApplyPage() {
                     autoComplete="name"
                   />
                 </div>
-                <div className="field ph-field">
-                  <label htmlFor="phone">
-                    <span className="ph-field-code">TEL</span> 연락처
-                  </label>
+                <div className="field orbit-field">
+                  <label htmlFor="phone">연락처</label>
                   <input
                     id="phone"
                     type="tel"
@@ -256,10 +298,8 @@ export default function ApplyPage() {
                     autoComplete="tel"
                   />
                 </div>
-                <div className="field ph-field">
-                  <label htmlFor="grade">
-                    <span className="ph-field-code">GR</span> 기수
-                  </label>
+                <div className="field orbit-field">
+                  <label htmlFor="grade">기수</label>
                   <input
                     id="grade"
                     type="text"
@@ -271,38 +311,102 @@ export default function ApplyPage() {
               </div>
             </fieldset>
 
-            <fieldset className="ph-fieldset">
-              <legend>
-                <span className="ph-legend-num">02</span>
-                희망 후원 금액 (월)
-              </legend>
-              <p className="ph-fieldset-hint">
-                금액은 참고용이며, 실제 이체는 안내 후 진행됩니다.
+            <fieldset className="orbit-fieldset">
+              <legend>자동이체(CMS) 정보</legend>
+              <p className="orbit-fieldset-hint">
+                후원금 출금 계좌 정보입니다. 예금주 본인 명의 계좌로 입력해 주세요.
               </p>
-              <div className="ph-amount-grid">
+              <div className="orbit-fields">
+                <div className="field orbit-field">
+                  <label htmlFor="holderName">예금주명</label>
+                  <input
+                    id="holderName"
+                    type="text"
+                    placeholder="신청자와 다를 경우에만 입력"
+                    value={holderName}
+                    onChange={(e) => setHolderName(e.target.value)}
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="field orbit-field">
+                  <label htmlFor="birth">예금주 생년월일 (6자리)</label>
+                  <input
+                    id="birth"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="예: 900101"
+                    value={birth}
+                    onChange={(e) => setBirth(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="field orbit-field">
+                  <label htmlFor="bank">출금 은행</label>
+                  <select id="bank" value={bank} onChange={(e) => setBank(e.target.value)}>
+                    <option value="">은행 선택</option>
+                    {BANKS.map((b) => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="field orbit-field">
+                  <label htmlFor="account">계좌번호</label>
+                  <input
+                    id="account"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="'-' 없이 숫자만"
+                    value={account}
+                    onChange={(e) => setAccount(e.target.value.replace(/\D/g, "").slice(0, 20))}
+                    autoComplete="off"
+                  />
+                </div>
+                <div className="field orbit-field">
+                  <label htmlFor="withdrawDay">출금일 (매월)</label>
+                  <select
+                    id="withdrawDay"
+                    value={withdrawDay}
+                    onChange={(e) => setWithdrawDay(e.target.value)}
+                  >
+                    {WITHDRAW_DAYS.map((d) => (
+                      <option key={d} value={d}>
+                        {d === "말일" ? "말일" : `${d}일`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset className="orbit-fieldset">
+              <legend>월 후원 금액 (자동이체 출금액)</legend>
+              <p className="orbit-fieldset-hint">선택하신 금액이 매월 약정일에 자동이체됩니다.</p>
+              <div className="orbit-amount-grid">
                 {PRESET_AMOUNTS.map((preset) => (
                   <button
                     key={preset.value}
                     type="button"
-                    className={`ph-amount ${selectedAmount === preset.value ? "active" : ""}`}
+                    className={`orbit-amount ${selectedAmount === preset.value ? "active" : ""}`}
                     onClick={() => setSelectedAmount(preset.value)}
                   >
-                    <span className="ph-amount-label">{preset.label}</span>
-                    <span className="ph-amount-desc">{preset.desc}</span>
+                    <span className="orbit-amount-label">{preset.label}</span>
+                    <span className="orbit-amount-desc">{preset.desc}</span>
                   </button>
                 ))}
                 <button
                   type="button"
-                  className={`ph-amount ph-amount--custom ${selectedAmount === "custom" ? "active" : ""}`}
+                  className={`orbit-amount ${selectedAmount === "custom" ? "active" : ""}`}
                   onClick={() => setSelectedAmount("custom")}
                 >
-                  <span className="ph-amount-label">직접 입력</span>
-                  <span className="ph-amount-desc">원하시는 금액</span>
+                  <span className="orbit-amount-label">직접 입력</span>
+                  <span className="orbit-amount-desc">원하시는 금액</span>
                 </button>
               </div>
               {selectedAmount === "custom" && (
                 <input
-                  className="ph-custom-input"
+                  className="orbit-custom-input"
                   type="text"
                   inputMode="numeric"
                   placeholder="월 후원 희망 금액 (원)"
@@ -312,23 +416,35 @@ export default function ApplyPage() {
               )}
             </fieldset>
 
-            {error && <p className="error-text ph-error">{error}</p>}
+            <label className="orbit-consent">
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={(e) => setConsent(e.target.checked)}
+              />
+              <span>
+                개인정보 수집·이용 및 자동이체(CMS) 출금에 동의합니다. 수집된 계좌 정보는
+                효성CMS를 통한 자동이체 등록·출금 목적으로만 사용됩니다.
+              </span>
+            </label>
 
-            <button className="ph-submit" type="submit" disabled={submitting}>
-              {submitting ? "접수 중..." : "참여 신청 접수하기"}
+            {error && <p className="error-text">{error}</p>}
+
+            <button className="orbit-submit" type="submit" disabled={submitting}>
+              {submitting ? "접수 중..." : "정기후원 신청하기"}
             </button>
 
-            <p className="ph-footnote">
-              제출하시면 참여 의사가 접수됩니다. 계좌 자동이체는 이 화면에서 처리되지 않으며,
-              이후 개별 안내를 통해 진행됩니다.
+            <p className="orbit-footnote">
+              제출하시면 자동이체 신청이 접수됩니다. 신청 즉시 결제되지 않으며, 동문회 확인 후
+              등록되어 약정일부터 매월 이체됩니다.
             </p>
           </form>
         </div>
       </section>
 
-      <footer className="ph-footer">
-        <span>대일외국어고등학교 총동문회 · 장학금 사업</span>
-        <span className="ph-footer-sep">|</span>
+      <footer className="orbit-footer">
+        <span>대일외국어고등학교 총동문회 · 발전기금 사업</span>
+        <span className="orbit-footer-sep">·</span>
         <a href="/admin">ADMIN</a>
       </footer>
     </div>

@@ -30,6 +30,7 @@ git push -u origin main
 | Secret | 값 |
 |---|---|
 | `VITE_APPS_SCRIPT_URL` | Google Apps Script 웹앱 배포 URL |
+| `VITE_SLACK_WEBHOOK_URL` | 슬랙 Incoming Webhook URL |
 | `VITE_SHEET_URL` | 구글 시트 URL |
 | `VITE_SITE_URL` | `https://fund.dflhs.or.kr` (도메인 연결 후) |
 
@@ -48,13 +49,16 @@ git push -u origin main
 
 ※ GitHub org/username이 다르면 해당 `*.github.io`로 설정
 
-## 6. Apps Script 업데이트
+## 6. Apps Script 업데이트 (구글 시트 저장 전용)
 
 `scripts/google-apps-script.js` 내용을 시트 Apps Script에 붙여넣고:
 
-1. **프로젝트 설정 → 스크립트 속성** → `SLACK_WEBHOOK_URL` 추가
-2. **배포 → 새 배포** (웹 앱, 모든 사용자)
+1. **프로젝트 설정 → 스크립트 속성** → `ADMIN_TOKEN` = 관리자 조회용 비밀번호 (`/admin`에서 동일 값 입력)
+2. **배포 → 새 배포** (웹 앱, 실행: 나 / 액세스: 모든 사용자)
 3. URL을 GitHub Secret `VITE_APPS_SCRIPT_URL`에 등록
+
+슬랙 알림은 이 스크립트를 거치지 않는다. 사이트가 신청 접수 성공 직후 `VITE_SLACK_WEBHOOK_URL`로 직접
+호출한다 (Apps Script 스크립트 속성 설정 불필요, `UrlFetchApp` 권한 승인도 필요 없음).
 
 ## 7. 배포 확인
 
